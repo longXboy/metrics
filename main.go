@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strconv"
 	"strings"
@@ -14,6 +16,10 @@ var healthCollectInterval int64 = 120
 var sleepInterval int64 = 6
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	var err error
 	CollectInterval := os.Getenv("CollectInterval")
 	if CollectInterval != "" {
