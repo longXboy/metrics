@@ -94,10 +94,7 @@ func getContainerLogs(waitGroup *sync.WaitGroup, dockerCli *docker.Client, c doc
 			}
 		}
 	}()
-	err := dockerCli.Stats(docker.StatsOptions{ID: c.ID, Stats: stat, Timeout: time.Second * 10, Done: done, Stream: true})
-	if err != nil {
-		log.Printf("Stats error:%s\n", err.Error())
-	}
+	dockerCli.Stats(docker.StatsOptions{ID: c.ID, Stats: stat, Timeout: time.Second * 10, Done: done, Stream: true})
 	waitGroup.Done()
 }
 
