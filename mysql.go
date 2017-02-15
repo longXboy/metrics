@@ -46,7 +46,7 @@ func InitMysql() {
 		DaoSrConnStr = "root:dangerous@tcp(192.168.1.25:3306)/daokeeper?charset=utf8"
 	}
 	var err error
-	DaoKeeperDB, err = xorm.NewEngine("mysql", connstr)
+	DaoKeeperDB, err = xorm.NewEngine("mysql", DaoKeeperConnStr)
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +54,7 @@ func InitMysql() {
 	if err != nil {
 		panic(err)
 	}
-	DaoSRDB, err = xorm.NewEngine("mysql", connstr)
+	DaoSRDB, err = xorm.NewEngine("mysql", DaoSrConnStr)
 	if err != nil {
 		panic(err)
 	}
