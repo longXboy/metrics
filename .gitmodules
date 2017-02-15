@@ -1,0 +1,15 @@
+[submodule "vendor/github.com/docker/docker"]
+	path = vendor/github.com/docker/docker
+	url = https://github.com/docker/docker.git
+[submodule "vendor/golang.org/x/net"]
+	path = vendor/golang.org/x/net
+	url = https://github.com/golang/net.git
+[submodule "vendor/github.com/docker/go-units"]
+	path = vendor/github.com/docker/go-units
+	url = https://github.com/docker/go-units.git
+[submodule "vendor/github.com/hashicorp/go-cleanhttp"]
+	path = vendor/github.com/hashicorp/go-cleanhttp
+	url = https://github.com/hashicorp/go-cleanhttp.git
+[submodule "vendor/github.com/go-sql-driver/mysql"]
+	path = vendor/github.com/go-sql-driver/mysql
+	url = https://github.com/go-sql-driver/mysql.git
