@@ -22,6 +22,7 @@ func calculateCpuPercent(previousCpu uint64, previousSystem uint64, currentCpu u
 }
 
 func getContainerLogs(waitGroup *sync.WaitGroup, dockerCli *docker.Client, c docker.APIContainers, lock *sync.Mutex, pts *[]client.Point) {
+	defer waitGroup.Done()
 	stat := make(chan *docker.Stats)
 	done := make(chan bool)
 	cname := ""
@@ -95,7 +96,6 @@ func getContainerLogs(waitGroup *sync.WaitGroup, dockerCli *docker.Client, c doc
 		}
 	}()
 	dockerCli.Stats(docker.StatsOptions{ID: c.ID, Stats: stat, Timeout: time.Second * 12, Done: done, Stream: true})
-	waitGroup.Done()
 }
 
 func getNodeMetrics(tunnel string) {
@@ -108,7 +108,7 @@ func getNodeMetrics(tunnel string) {
 	defer cancel()
 	containers, err := dockerCli.ListContainers(docker.ListContainersOptions{Filters: map[string][]string{"label": []string{"io.daocloud.sr.microservice-id"}}, Context: ctx})
 	if err != nil {
-		log.Printf("list containers(%s) failed!err:=%s", tunnel, err.Error())
+		log.Printf("list containers(%s) failed!err:=%s\n", tunnel, err.Error())
 		return
 	}
 	pts := make([]client.Point, 0)
@@ -121,4 +121,7 @@ func getNodeMetrics(tunnel string) {
 	}
 	waitGroup.Wait()
 	writePoints(pts)
+	if len(pts) > 0 {
+		log.Printf("write points:%d tunnel:%s", len(pts), tunnel)
+	}
 }

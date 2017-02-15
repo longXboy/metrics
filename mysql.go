@@ -66,7 +66,7 @@ func InitMysql() {
 
 func getNodeTunnel(id string) (DaomonitTunnelStat, bool, error) {
 	var tunnels []DaomonitTunnelStat = make([]DaomonitTunnelStat, 0)
-	err := DaoKeeperDB.Where("daomonit_id=?", id).And("is_established=?", true).And("local_addr=?", "unix:///var/run/docker.sock").Desc("established_at").Limit(1).Find(&tunnels)
+	err := DaoKeeperDB.Where("daomonit_id=?", id).And("is_established=?", true).And("local_addr=?", "unix:///var/run/docker.sock").Desc("updated_at").Limit(1).Find(&tunnels)
 	if err != nil {
 		return DaomonitTunnelStat{}, false, nil
 	}
