@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -37,8 +38,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	var goRoutineIdx int64 = 0
 	for {
 		time.Sleep(time.Duration(int64(time.Second) * sleepInterval))
+		fmt.Println("goRoutineIdx:", goRoutineIdx)
 		loopIdx++
 		if loopIdx == 20 {
 			loopIdx = 0
@@ -53,8 +56,7 @@ func main() {
 			log.Println("listUnCollectedNodes(200) failed,err:=", err)
 			continue
 		}
-		fmt.Println("healthy:", len(healthyIds))
-		fmt.Println("uncollected:", len(unCollectedIds))
+		fmt.Println("healthy:", len(healthyIds), "  uncollected:", len(unCollectedIds))
 		if unCollectedIds == nil || len(unCollectedIds) == 0 {
 			continue
 		}
@@ -68,7 +70,9 @@ func main() {
 				end = len(unCollectedIds)
 			}
 			ids := unCollectedIds[begin:end]
+			atomic.AddInt64(&goRoutineIdx, 1)
 			go func() {
+				defer atomic.AddInt64(&goRoutineIdx, -1)
 				_, err2 := markNodeCollected(ids)
 				if err2 != nil {
 					log.Println("markNodeCollected failed!err:=", err.Error())

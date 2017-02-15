@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/influxdb/influxdb/client"
+	"golang.org/x/net/context"
 )
 
 func calculateCpuPercent(previousCpu uint64, previousSystem uint64, currentCpu uint64, currentSystem uint64, cpuSize int) float64 {
@@ -94,7 +94,7 @@ func getContainerLogs(waitGroup *sync.WaitGroup, dockerCli *docker.Client, c doc
 			}
 		}
 	}()
-	dockerCli.Stats(docker.StatsOptions{ID: c.ID, Stats: stat, Timeout: time.Second * 10, Done: done, Stream: true})
+	dockerCli.Stats(docker.StatsOptions{ID: c.ID, Stats: stat, Timeout: time.Second * 12, Done: done, Stream: true})
 	waitGroup.Done()
 }
 
@@ -104,14 +104,11 @@ func getNodeMetrics(tunnel string) {
 		log.Printf("new docker client(%s) failed!err:=%s", tunnel, err.Error())
 		return
 	}
-	version, err := dockerCli.Version()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*12)
+	defer cancel()
+	containers, err := dockerCli.ListContainers(docker.ListContainersOptions{Filters: map[string][]string{"label": []string{"io.daocloud.sr.microservice-id"}}, Context: ctx})
 	if err != nil {
-		log.Printf("docker version(%s) failed!err:=%s", tunnel, err.Error())
-		return
-	}
-	containers, err := dockerCli.ListContainers(docker.ListContainersOptions{Filters: map[string][]string{"label": []string{"io.daocloud.sr.microservice-id"}}})
-	if err != nil {
-		log.Printf("list containers(%v,%v) failed!err:=%s", version.Get("Version"), version.Get("ApiVersion"), err.Error())
+		log.Printf("list containers(%s) failed!err:=%s", tunnel, err.Error())
 		return
 	}
 	pts := make([]client.Point, 0)
@@ -123,10 +120,5 @@ func getNodeMetrics(tunnel string) {
 		time.Sleep(time.Millisecond * 50)
 	}
 	waitGroup.Wait()
-	if pts != nil && len(pts) > 0 {
-		fmt.Printf("done!version:%v  points:%v\n", version.Get("Version"), len(pts))
-	} else {
-		fmt.Printf("done!tunnel:%s version:%v\n", tunnel, version.Get("Version"))
-	}
 	writePoints(pts)
 }
