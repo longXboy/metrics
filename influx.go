@@ -50,7 +50,7 @@ func InitInflux() {
 	log.Printf("ping influx success! %v, %s", dur, ver)
 
 }
-func writePoints(pts []client.Point) {
+func writePoints(pts []client.Point) error {
 	bps := client.BatchPoints{
 		Points:          pts,
 		Database:        InfluxDb,
@@ -58,8 +58,9 @@ func writePoints(pts []client.Point) {
 	}
 	_, err := influxCli.Write(bps)
 	if err != nil {
-		log.Printf("write points failed!err:=%v\n", err)
+		return err
 	}
+	return nil
 }
 
 func newPoints(measurement string, tags map[string]string, fields map[string]interface{}) client.Point {

@@ -41,7 +41,7 @@ func main() {
 	var goRoutineIdx int64 = 0
 	for {
 		time.Sleep(time.Duration(int64(time.Second) * sleepInterval))
-		fmt.Println("goRoutineIdx:", goRoutineIdx)
+		fmt.Println("goRoutineIdx:", atomic.LoadInt64(&goRoutineIdx))
 		loopIdx++
 		if loopIdx == 20 {
 			loopIdx = 0
@@ -60,46 +60,39 @@ func main() {
 		if unCollectedIds == nil || len(unCollectedIds) == 0 {
 			continue
 		}
-		for i := 0; true; i++ {
-			begin := i * 10
-			end := (i + 1) * 10
-			if begin >= len(unCollectedIds) {
-				break
-			}
-			if end >= len(unCollectedIds) {
-				end = len(unCollectedIds)
-			}
-			ids := unCollectedIds[begin:end]
-			atomic.AddInt64(&goRoutineIdx, 1)
-			go func() {
-				defer atomic.AddInt64(&goRoutineIdx, -1)
-				_, err2 := markNodeCollected(ids)
-				if err2 != nil {
-					log.Println("markNodeCollected failed!err:=", err.Error())
-					return
-				}
-				for _, data := range ids {
-					dts, isok, err2 := getNodeTunnel(data)
-					if err2 != nil {
-						log.Println("getNodeTunnel failed!err:=", err.Error())
-						continue
-					}
-					if !isok {
-						continue
-					}
-					isok, err := testTunnelAlive(dts)
-					if err != nil {
-						log.Println("testTunnelAlive failed!err:=", err.Error())
-						continue
-					}
-					if isok {
-						if strings.HasPrefix(dts.PublicUrl, "tcp") {
-							dts.PublicUrl = strings.Replace(dts.PublicUrl, "tcp", "http", 1)
-						}
-						getNodeMetrics(dts.PublicUrl)
-					}
-				}
-			}()
+		_, err = markNodeCollected(unCollectedIds)
+		if err != nil {
+			log.Println("markNodeCollected failed!err:=", err.Error())
+			continue
 		}
+		for i := range unCollectedIds {
+			go testAndLogNode(unCollectedIds[i], &goRoutineIdx)
+			time.Sleep(time.Millisecond * 50)
+		}
+
+	}
+}
+
+func testAndLogNode(id string, idx *int64) {
+	atomic.AddInt64(idx, 1)
+	defer atomic.AddInt64(idx, -1)
+	dts, isok, err := getNodeTunnel(id)
+	if err != nil {
+		log.Println("getNodeTunnel failed!err:=", err.Error())
+		return
+	}
+	if !isok {
+		return
+	}
+	isok, err = testTunnelAlive(dts)
+	if err != nil {
+		log.Println("testTunnelAlive failed!err:=", err.Error())
+		return
+	}
+	if isok {
+		if strings.HasPrefix(dts.PublicUrl, "tcp") {
+			dts.PublicUrl = strings.Replace(dts.PublicUrl, "tcp", "http", 1)
+		}
+		getMachineMetrics(dts.PublicUrl)
 	}
 }
