@@ -33,6 +33,7 @@ func getMachineMetrics(tunnel string) {
 		log.Printf("new docker client(%s,%s) failed!err:=%v\n", tunnel, apiVersion, err)
 		return
 	}
+	defer cli.Close()
 	containers, err := listContainers(ctx, cli)
 	if err != nil {
 		log.Printf("list containers(%s,%s) failed!err:=%v\n", tunnel, apiVersion, err)
@@ -61,21 +62,26 @@ func newClient(ctx context.Context, tunnel string) (*dclient.Client, string, err
 	var err error
 	cli, err = dclient.NewClient(tunnel, "1.17", nil, nil)
 	if err != nil {
+		cli.Close()
 		log.Printf("dclient.NewClient (%s) failed!err:=%v\n", tunnel, err)
 		return nil, "", err
 	}
 	v, err := cli.ServerVersion(ctx)
 	if err != nil {
+		cli.Close()
 		log.Printf("cli.ServerVersion (%s) failed!err:=%v\n", tunnel, err)
 		return nil, "", err
 	}
 	if v.APIVersion == "" {
+		cli.Close()
 		log.Printf("APIVersion is empty(%s)\n", tunnel, err)
 		return nil, "", fmt.Errorf("apiversion invalid")
 	}
 	if v.APIVersion != "1.17" {
+		cli.Close()
 		cli, err = dclient.NewClient(tunnel, v.APIVersion, nil, nil)
 		if err != nil {
+			cli.Close()
 			log.Printf("dclient.NewClient (%s,%s) failed!err:=%v\n", tunnel, v.APIVersion, err)
 			return nil, "", err
 		}
