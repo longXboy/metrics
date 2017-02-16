@@ -76,10 +76,16 @@ func getNodeTunnel(id string) (DaomonitTunnelStat, bool, error) {
 	return tunnels[0], true, nil
 }
 
-func markNodeCollected(ids []string) (int64, error) {
+func markNodesCollected(ids []string) (int64, error) {
 	var node Node
 	node.HealthCollectAt = time.Now()
 	return DaoSRDB.In("node_id", ids).Cols("health_collect_at").Update(&node)
+}
+
+func markNodeCollected(id string) (int64, error) {
+	var node Node
+	node.HealthCollectAt = time.Now()
+	return DaoSRDB.Where("node_id=?", id).Cols("health_collect_at").Update(&node)
 }
 
 func listUnCollectedNodes(ids []string, limit int) ([]string, error) {

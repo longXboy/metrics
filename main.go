@@ -30,7 +30,7 @@ func main() {
 	agent.Start(stackimpact.Options{
 		AgentKey:       "d6ac427b372f9a5b2d93bb7ec47421a244112e65",
 		AppName:        "sr_metrics",
-		AppVersion:     "1.0.1",
+		AppVersion:     "1.0.2",
 		AppEnvironment: production,
 	})
 
@@ -76,26 +76,28 @@ func main() {
 			log.Println("listUnCollectedNodes(200) failed,err:=", err)
 			continue
 		}
-		fmt.Println("healthy:", len(healthyIds), "  uncollected:", len(unCollectedIds))
+		log.Println("healthy:", len(healthyIds), " uncollected:", len(unCollectedIds))
 		if unCollectedIds == nil || len(unCollectedIds) == 0 {
-			continue
-		}
-		_, err = markNodeCollected(unCollectedIds)
-		if err != nil {
-			log.Println("markNodeCollected failed!err:=", err.Error())
 			continue
 		}
 		for i := range unCollectedIds {
 			go testAndLogNode(unCollectedIds[i], &goRoutineIdx)
-			time.Sleep(time.Millisecond * 50)
 		}
-
 	}
 }
 
 func testAndLogNode(id string, idx *int64) {
 	atomic.AddInt64(idx, 1)
 	defer atomic.AddInt64(idx, -1)
+	rows, err := markNodeCollected(id)
+	if err != nil {
+		log.Println("markNodeCollected failed!err:=", err.Error())
+		return
+	}
+	if rows != 1 {
+		log.Printf("set node(%s) health_collect failed!num not match", id)
+	}
+
 	dts, isok, err := getNodeTunnel(id)
 	if err != nil {
 		log.Println("getNodeTunnel failed!err:=", err.Error())
