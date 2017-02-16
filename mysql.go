@@ -83,9 +83,16 @@ func markNodesCollected(ids []string) (int64, error) {
 }
 
 func markNodeCollected(id string) (int64, error) {
-	var node Node
-	node.HealthCollectAt = time.Now()
-	return DaoSRDB.Where("node_id=?", id).Cols("health_collect_at").Update(&node)
+	sql := "update node set health_collect_at=CURRENT_TIMESTAMP() where node_id=?"
+	result, err := DaoSRDB.Exec(sql, id)
+	if err != nil {
+		return 0, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return affected, err
 }
 
 func listUnCollectedNodes(ids []string, limit int) ([]string, error) {
