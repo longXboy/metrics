@@ -10,15 +10,29 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/stackimpact/stackimpact-go"
 )
 
 var healthCollectInterval int64 = 120
 var sleepInterval int64 = 6
 
 func main() {
+	var production string = "development"
+	if os.Getenv("PROD") == "true" || os.Getenv("PROD") == "1" {
+		production = "production"
+	}
+
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
+	agent := stackimpact.NewAgent()
+	agent.Start(stackimpact.Options{
+		AgentKey:       "d6ac427b372f9a5b2d93bb7ec47421a244112e65",
+		AppName:        "sr_metrics",
+		AppVersion:     "1.0.1",
+		AppEnvironment: production,
+	})
 
 	var err error
 	CollectInterval := os.Getenv("CollectInterval")
